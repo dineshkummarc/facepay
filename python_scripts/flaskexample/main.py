@@ -3,6 +3,7 @@ import mysql.connector
 import os
 import cv2
 import numpy as np
+import urllib.parse
 
 subjects = [] 
 dicts = dict()
@@ -31,37 +32,49 @@ def index():
 def show_user(user_id):
     cursor.execute(sql_get_user, (user_id, ))
     result = cursor.fetchone()
-    jsonVal="{'user_id'" +":'" +str(result[0])+"','username':'" +str(result[1]) + "', 'cardName':'" + str(result[2])+"'}"
+    if not result is None:
+        jsonVal="{'user_id'" +":'" +str(result[0])+"','username':'" +str(result[1]) + "', 'cardName':'" + str(result[2])+"'}"
+    else:
+        jsonVal="{'user_id'" +":'" +str(user_id)+"','username':'', 'cardName':''}"
     #% str(result[0]) % str(result[1]) % str(result[2])
     return jsonVal
 
+#@app.route("/auth/user/<int:user_id>")
+#def authenticate(user_id, training_path):
 @app.route("/auth/user/<int:user_id>/<string:training_path>")
 def authenticate(user_id, training_path):
-    #there is no label 0 in our training data so subject name for index/label 0 is empty   
-    subjects, dicts = get_subjects_array_and_dict() 
-    #if "training_path" is empty
-    if training_path == "":
-        training_path = getGlobalTrainingPath()
-      
-    faces, labels = prepare_training_data(training_path)    
-    #train our face recognizer of our training faces
-    face_recognizer.train(faces, np.array(labels))
-    #print("Predicting images...")
-    #load test images
-    user_auth_file_name = "test-data/test1.jpg"
-    user_auth_file_name = getUserAuthFile(user_id)
+    training_path = urllib.parse.unquote_plus(training_path)
     prediction_status=0
-    if user_auth_file_name != "":
-        test_img1 = cv2.imread(user_auth_file_name)
-        #perform a prediction
-        label_user_id, cardName = predict(test_img1)
-        prediction_status=1
-    else:
+    label_user_id=""
+    cardName=""    
+    try:
+        #there is no label 0 in our training data so subject name for index/label 0 is empty   
+        subjects, dicts = get_subjects_array_and_dict() 
+        #if "training_path" is empty
+        if training_path == "":
+            training_path = getGlobalTrainingPath()
+
+        faces, labels = prepare_training_data(training_path)   
+        #train our face recognizer of our training faces
+        face_recognizer.train(faces, np.array(labels))
+        user_auth_file_name = "test-data/test1.jpg"        
+        user_auth_file_name = getUserAuthFile(user_id)
+        
+
+        if user_auth_file_name != "":
+            test_img1 = cv2.imread(user_auth_file_name)
+            #perform a prediction
+            label_user_id, cardName = predict(test_img1)
+            prediction_status=1
+        else:
+            prediction_status=0
+            label_user_id=""
+            cardName=""
+
+    except:
         prediction_status=0
-        label_user_id=""
-        cardName=""
     
-    return "{\n'predictionStatus':'"+str(prediction_status) + "',\n'reqUserId':'" + str(user_id) + "',\n'predUserId':'" + str(label_user_id) + "',\n'predCardName':'" + str(cardName) + "'}"
+    return "{\n'predictionStatus':'"+str(prediction_status) + "',\n'reqUserId':'" + str(user_id) + "',\n'predUserId':'" + str(label_user_id) + "',\n'predCardName':'" + str(cardName) + "',\n'inputImageFilename':'" + str(training_path) + "'\n}"
 
 def getUserAuthFile(user_id):
     sql="select id, userId, imageName from tbl_user_image_auth_reqs where userId=%s LIMIT 1"
@@ -82,6 +95,9 @@ def get_subjects_array_and_dict():
     index = 0
     cursor.execute("select id, cardName from tbl_user")
     result= cursor.fetchall()
+    subjects = []
+    dicts = dict()
+
     for ids in result:
         subjects.append(str(ids[1]))
         dicts[index] = str(ids[0])
