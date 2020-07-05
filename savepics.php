@@ -9,15 +9,19 @@ require "settings/fileupload.php";
 
 
 /**
- * 
+ * Add a parameter for table name.
+ * This will allow this same method to be used to insert the file details into both table for training images
+ * and for test images (used for face recognition/authentication)
+ * @param $userId The user id.
+ * @param $uploadfile The file name that was uploaded to the folder path.
+ * @param $tableName The table name that this file name should be inserted into.
+ * @return $status A boolean value. If TRUE, then successfully inserted into the table. FALSE if didnot insert.
 */
-function SaveFilename($userId, $uploadfile)
+function SaveFilename($userId, $uploadfile, $tableName)
 {
     $status=FALSE;
     require "settings/database.php";
-    $sql_store_image="insert into tbl_user_images(userId, imageName) values(:userid, :imageName)";
-//    $sql_store_image="insert into tbl_user_images(userId, imageName) values('{$userId}', '{$uploadfile}')"; 
-//    print("<br> &gt;&gt; SQL_STORE_IMAGE is: <strong>". $sql_store_image . "</strong><br>");
+    $sql_store_image="insert into :tableName (userId, imageName) values(:userid, :imageName)";
    try
     {
         $conn= new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
@@ -25,6 +29,7 @@ function SaveFilename($userId, $uploadfile)
          $stmt = $conn->prepare($sql_store_image);
          $stmt->bindParam(":userid", $userId);
          $stmt->bindParam(":imageName", $uploadfile);
+         $stmt->bindParam(":tableName", $tableName);
          $stmt->execute();
          $status=TRUE;
     }
@@ -116,87 +121,59 @@ function upload($filesArray, $destinationFilename)
     }
     return $upload_status;
 }
-//if (isset($_POST['webcam']) or isset($_REQUEST['webcam']))
-//{
-   
-    if (isset($_FILES))
+
+if (isset($_FILES))
+{
+    $destFileExtension = GetExtensionFromFilename($_FILES['webcam']['name']);
+    $destFilename = GetNextTrainingImageName(htmlspecialchars($_GET['userId']) ,  $destFileExtension);
+    print (">>>Generated File Name of Destination File is: <strong>". $destFilename . "</strong><br>");
+    $uploaddir = "";
+    $UPLOAD_DIR = trim($UPLOAD_DIR); //trim whatever was in the "included fileupload.php" file.
+    $SUBJECT_FOLDER_NAME_PREFIX = trim($SUBJECT_FOLDER_NAME_PREFIX); //trim whatever comes from the setting files in case of errors.
+    
+    //Let's the get full upload filepathand name
+    $uploadfile=  "";
+    $lastCharacter = substr($UPLOAD_DIR, strlen($UPLOAD_DIR)-1, 1);
+	
+    print(">>> The imported upload directory is ". $UPLOAD_DIR. "<br>");
+    print(">>> Last character in directory is ". $lastCharacter . "<br>");        
+    
+    if ($lastCharacter === "/" || $lastCharacter === "\\")
     {
-        $destFileExtension = GetExtensionFromFilename($_FILES['webcam']['name']);
-        print(">>>File size in bytes is :<strong>". $_FILES['webcam']['size']. "</strong><br>");
-        print(">>>File name from form is: <strong>". $_FILES['webcam']['tmp_name']. "</strong><br>");
-        print (">>>File Extension of Uploaded File is: <strong>". $destFileExtension. "</strong><br>");
-        $destFilename = GetNextTrainingImageName(htmlspecialchars($_GET['userId']) ,  $destFileExtension);
-        print (">>>Generated File Name of Destination File is: <strong>". $destFilename . "</strong><br>");
-        $uploaddir = "";
-        $UPLOAD_DIR = trim($UPLOAD_DIR); //trim whatever was in the "included fileupload.php" file.
-        $SUBJECT_FOLDER_NAME_PREFIX = trim($SUBJECT_FOLDER_NAME_PREFIX); //trim whatever comes from the setting files in case of errors.
-       
-        //Let's the get full upload filepathand name
-        $uploadfile=  "";
-        $lastCharacter = substr($UPLOAD_DIR, strlen($UPLOAD_DIR)-1, 1);
-
-        print(">>> The imported upload directory is ". $UPLOAD_DIR. "<br>");
-        print(">>> Last character in directory is ". $lastCharacter . "<br>");        
-        
-        if ($lastCharacter === "/" || $lastCharacter === "\\")
-        {
-            $uploaddir = trim($UPLOAD_DIR . $SUBJECT_FOLDER_NAME_PREFIX . htmlspecialchars($_GET['userId']) . "/");
-        }  else 
-        {
-            $uploaddir = trim($UPLOAD_DIR . "/" . $SUBJECT_FOLDER_NAME_PREFIX . htmlspecialchars($_GET['userId']) . "/");
-        }
-        try
-        {      
-            if (!is_dir($uploaddir))
-            {
-                mkdir($uploaddir, 0777, TRUE);
-               print("<br>>>> Just Mkdir() A New Directory:<strong>".$uploaddir."</strong><br>");
-            }
-        }
-        catch(Exception $ex)
-        {
-            print(">>>Exceptin when creating destination folder. <strong>". $e->getMessage()."</strong><br>");
-        }
-
-         $uploadfile =$uploaddir . $destFilename;
-
-        print(">>>Full file name: <strong>". $uploadfile. "</strong><br>");
-
-        $is_uploaded = FALSE;
-       $is_uploaded = upload($_FILES, $uploadfile);
-// $is_uploaded = upload($_FILES, $_GET["userId"], $uploaddir);
-       if ($is_uploaded)
-       {
-           //Save the info of the file into the database
-           print(">>><br>Before SaveFilename()-> userid is: <strong>". htmlspecialchars($_GET['userId'])."</strong><br>");
-
-           SaveFilename(htmlspecialchars($_GET['userId']), $uploadfile);
-       }
+        $uploaddir = trim($UPLOAD_DIR . $SUBJECT_FOLDER_NAME_PREFIX . htmlspecialchars($_GET['userId']) . "/");
+    }  else 
+    {
+        $uploaddir = trim($UPLOAD_DIR . "/" . $SUBJECT_FOLDER_NAME_PREFIX . htmlspecialchars($_GET['userId']) . "/");
     }
+    try
+    {      
+        if (!is_dir($uploaddir))
+        {
+            mkdir($uploaddir, 0777, TRUE);
+           print("<br>>>> Just Mkdir() A New Directory:<strong>".$uploaddir."</strong><br>");
+        }
+    }
+    catch(Exception $ex)
+    {
+        print(">>>Exceptin when creating destination folder. <strong>". $e->getMessage()."</strong><br>");
+    }
+	
+     $uploadfile =$uploaddir . $destFilename;
+	
+    print(">>>Full file name: <strong>". $uploadfile. "</strong><br>");
+	
+    $is_uploaded = FALSE;
+    $is_uploaded = upload($_FILES, $uploadfile);
+	 $is_uploaded = upload($_FILES, $_GET["userId"], $uploaddir);
+    if ($is_uploaded)
+    {
+        //Save the info of the file into the database
+        print(">>><br>Before SaveFilename()-> userid is: <strong>". htmlspecialchars($_GET['userId'])."</strong><br>");
+        $tableName="tbl_user_images";
+        SaveFilename(htmlspecialchars($_GET['userId']), $uploadfile, $tableName);
+    }
+}
+    
 
- //   $status = 100;
-//}
-// try{
-//     $conn = new PDO("mysql:host=$servername;dbname=$dbName", $dbUsername, $dbPassword);
-//     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-// 	$stmt=$conn->prepare($sql_store_image);
-//     $stmt->bindParam(":userId", $userid);
-//     $stmt->bindParam(":imageName", $status);
-//     $stmt->execute();
-//     print ("DEBUG>>> ". $stmt->rowCount(). " rows updated. <br>");
-//     print("DEBUG>>> ". isset($_POST));
-//     print("FILES array content: <br>". $array_string);
-//     $stmt = $conn->prepare($sql_all_data);
-//     $stmt->bindParam(":notes", $array_string);
-//     $stmt->execute();
 
-//     //print all the elements in the $_POST superglobal array
-//     foreach($_POST as $key)
-//     {
-//         print ($key);
-//     }
-// }catch(PDOException $e)
-// {
-//     print("Error in DB Connection/Operations>>> " . $e->getMessage());
-// }
 ?>

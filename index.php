@@ -3,17 +3,23 @@ require "settings/database.php";
 require "settings/trainingsettings.php";
 require "settings/menu.php";
 
+
+if (isset($_GET["action"]) && $_GET["action"] =="logout")
+{
+	session_abort();
+}
+
 $usr = "";
 $password ="";
 	
 	
 function test_input($data) 
-	{
+{
 		$data = trim($data);
 		$data = stripslashes($data);
 		$data = htmlspecialchars($data);
 		return $data;
-	}
+}
 
 $hasErrors = false;
 $errorMsg=""; //"Sample Error Message";

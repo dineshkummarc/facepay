@@ -1,5 +1,7 @@
 <?php
+session_start();
 require "../settings/menu.php";
+
 ?>
 <!DOCTYPE HTML>
 <html lang="en-US">
@@ -21,10 +23,10 @@ require "../settings/menu.php";
 
 
 <body onload="doShowAll()">
-<?php echo $menuBar; ?>
+<?php echo $menuBarShop; ?>
 	<h2>Facepay Store</h2>
 	<p>Insert items and quantity for your shopping cart. </p>
-	<form name=ShoppingList>
+	<form name="ShoppingList" method="POST" action="checkout.php">
 
 		<div id="main">
 			<table>
@@ -51,8 +53,11 @@ require "../settings/menu.php";
 			<h3>Shopping Cart</h3>
 			<table id=list></table>
 			<p>
-			<div class="form-group"><label><input type=button value="Clear"   class="btn btn-primary"  onclick="ClearAll()">
-					<i>* Delete all items</i></label></div>
+			<div class="form-group">
+				<input type="button" value="Empty Cart"   class="btn btn-primary"  onclick="ClearAll()" />
+				<input type="submit" name="btnCheckout" value="Checkout"   class="btn btn-primary"  />	
+				<input type="hidden" name="hidden_user_id" value="<?php echo $_SESSION["USER_ID"]; ?>" />	
+			</div>
 			</p>
 		</div>
 	</form>

@@ -1,57 +1,64 @@
 <?php
-require "settings/database.php";
-require "settings/trainingsettings.php"; 
-require "settings/menu.php";
+session_start();
+require "../settings/database.php";
+require "../settings/trainingsettings.php"; 
+require "../settings/menu.php";
 
- $passwordErr="";
- $showCameraButtons=TRUE;
+$sql_get_user      = "SELECT * FROM tbl_user WHERE id=:userId";
+$sql_count_images  = "SELECT count(*) as numImages from tbl_user_images where userId=:userId";
+$is_form_submitted = 0;
+$cardName          = "";
+$cardNumber        = ""; 
+$showCameraButtons = TRUE;
 
-    $cardName = "";
-    $cardNumber=""; 
+    // if (isset($_POST["btnCheckout"])) //if the submit came from the "shop.php" submit button
+    // {
 
-    $sql_get_user="SELECT * FROM tbl_user WHERE id=:userId";
-    $sql_count_images="select count(*) as numImages from tbl_user_images where userId=:userId";
-    
-    if (isset($_POST['btnDeleteFaces']))
-    {
-        //Get the userId in a hidden form field
-        $userid=$_POST["hidden_user_id"];
-        $sql_delete_all_images="delete from tbl_user_images where userId=:userId";
-        $sql_select_files_for_user="select imageName from tbl_user_images where userId=:userId";
+    //     $passwordErr = "";
 
-        try{
-            $conn=new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
 
-            $stmt=$conn->prepare($sql_select_files_for_user);
-            $stmt->bindParam(":userId", $userid);
-            $stmt->execute();
-            $result = $stmt->fetch();
-            if (count($result) > 0)
-            {
-                $filenameArray = array();
-                foreach($result as $row)
-                {
-                    $filenameArray[] = $row["imageName"];
-                }
-                //Now use a function defined  in the include file "fileupload.php" called "deletePhysicalFiles"
-                //Then delete from the folder path
-                deletePhysicalFiles($filenameArray);
 
-                //Then delete from the database table
-                $stmt = $conn->prepare($sql_delete_all_images);
-                $stmt->bindParam(":userId", $userid);
-                $stmt->execute();
-            }
+   
+    //     //Get the userId in a hidden form field
+    //     $userid=$_POST["hidden_user_id"];
+    //     $sql_delete_all_images="delete from tbl_user_images where userId=:userId";
+    //     $sql_select_files_for_user="select imageName from tbl_user_images where userId=:userId";
+
+    //     try{
+    //         $conn=new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
+
+    //         $stmt=$conn->prepare($sql_select_files_for_user);
+    //         $stmt->bindParam(":userId", $userid);
+    //         $stmt->execute();
+    //         $result = $stmt->fetch();
+    //         if (count($result) > 0)
+    //         {
+    //             $filenameArray = array();
+    //             foreach($result as $row)
+    //             {
+    //                 $filenameArray[] = $row["imageName"];
+    //             }
+    //             //Now use a function defined  in the include file "fileupload.php" called "deletePhysicalFiles"
+    //             //Then delete from the folder path
+    //             deletePhysicalFiles($filenameArray);
+
+    //             //Then delete from the database table
+    //             $stmt = $conn->prepare($sql_delete_all_images);
+    //             $stmt->bindParam(":userId", $userid);
+    //             $stmt->execute();
+    //         }
            
 
-        }catch(PDOException $e)
-        {
+    //     }catch(PDOException $e)
+    //     {
 
-        }
-    }
-	if(isset($_GET['userId']) )
+    //     }
+    // }
+
+
+	if(isset($_POST["hidden_user_id"]) )
 	{ 
-        $userid = $_GET['userId'];
+        $userid = $_POST["hidden_user_id"];
         
         try 
         {
@@ -108,7 +115,7 @@ require "settings/menu.php";
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
-	<title>FacePay :: Enrol Your Face</title>
+	<title>FacePay :: Shopping Cart Checkout</title>
 <!-- CSS -->
 <style>
 #my_camera{
@@ -119,14 +126,14 @@ require "settings/menu.php";
 </style>
 </head>
 <body>
-<?php echo $menuBar; ?>
+<?php echo $menuBarShop; ?>
 <!-- -->
- <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+ <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
 
     <div class="form-group">
             Welcome, <strong><?php echo $cardName; ?>.<br></strong>
             Card Number: <strong><?php echo $cardNumber; ?></strong><br>
-            <strong>important</strong> Please center your face in the camera. Take 12 pictures of your face. Click "Start Camera" to begin.
+            <strong>important</strong> To Pay, please take a picture of your face to authenticate instead of your card.
     </div> 
     &nbsp;<div id="my_camera"></div>
 
@@ -140,8 +147,9 @@ require "settings/menu.php";
    {
     ?>
         <input type="button" value="Start Camera" onClick="configure()" class="btn btn-primary" >
-        <input type="button" value="Take Snapshot" onClick="take_snapshot()" class="btn btn-primary" >
-        <input type="button" value="Save Snapshot" onClick="saveSnap()" class="btn btn-primary" >
+        <input type="button" value="Pay With Your Face" onClick="authenticateFace()" class="btn btn-primary" >
+        <!-- <input type="button" value="Take Snapshot" onClick="take_snapshot()" class="btn btn-primary" > -->
+        <!-- <input type="button" value="Save Snapshot" onClick="saveSnap()" class="btn btn-primary" > -->
      <?php 
    }
    else if (!$showCameraButtons) //Hide camera buttons
@@ -155,7 +163,7 @@ require "settings/menu.php";
     <div id="results" ></div>
   </form>
  <!-- Script -->
- <script type="text/javascript" src="./js/webcam.min.js"></script>
+ <script type="text/javascript" src="../js/webcam.min.js"></script>
 
  <!-- Code to handle taking the snapshot and displaying it locally -->
  <script language="JavaScript">
@@ -176,7 +184,7 @@ require "settings/menu.php";
  // preload shutter audio clip
  var shutter = new Audio();
  shutter.autoplay = false;
- shutter.src = navigator.userAgent.match(/Firefox/) ? 'shutter.ogg' : 'shutter.mp3';
+ shutter.src = navigator.userAgent.match(/Firefox/) ? '../shutter.ogg' : '../shutter.mp3';
 
  function take_snapshot() {
         // play sound effect
@@ -194,12 +202,17 @@ require "settings/menu.php";
         Webcam.reset();
  }
 
+ function authenticateFace() {
+      take_snapshot();
+      saveSnap();
+ }
+
 function saveSnap(){
  // Get base64 value from <img id='imageprev'> source
  var base64image = document.getElementById("imageprev").src;
 
  Webcam.upload( base64image, 
-                "savepics.php?action=training_path&userId=<?php echo htmlspecialchars($_GET['userId']); ?>", 
+                "savepics.php?action=test_path&userId=<?php echo htmlspecialchars($_SESSION["USER_ID"]); ?>", 
                 function(code, text) {
                     console.log('Save successfully');                
                 }
