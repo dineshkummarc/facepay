@@ -18,11 +18,17 @@ function DoFinalAction($action, $userId, $filename)
         $url="";//TODO: Read the url from a settings file?
         $url_format="http://127.0.0.1:5000/auth/user/%userId%/%imagefile%";
         $url_format= GetSettingsKeyValue("face_recognition_url_format", "valCol");
+       // print(">>>URL_format is: {$url_format} <br>");
         $url_format=str_replace("%userId%", $userId, $url_format);
-        $url_format=str_replace("%imagefile%", urlencode($filename), $url_format);
+        //$url_format=str_replace("%imagefile%", urlencode($filename), $url_format);
+        $url_format=str_replace("%imagefile%", "", $url_format);
         $url = $url_format;
+       // print(">>>Face recognition url is {$url}<br>");
+        
         try {
             $jsonResponse = CallAPI($method, $url, $data = false);
+            print($jsonResponse);
+            return;
             return $jsonResponse;
         }catch(Exception $e)
         {
@@ -58,8 +64,8 @@ function CallAPI($method, $url, $data = false)
     }
 
     // Optional Authentication:
-    curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-    curl_setopt($curl, CURLOPT_USERPWD, "username:password");
+    //curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    //curl_setopt($curl, CURLOPT_USERPWD, "username:password");
 
     curl_setopt($curl, CURLOPT_URL, $url);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
@@ -106,14 +112,15 @@ function GetSettingsKeyValue($keyVal,$colName)
         $stmt=$conn->prepare($sql_select_settings);
         $stmt->bindParam("1", $keyVal);
         $stmt->execute();
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $result = $stmt->fetchAll(/*PDO::FETCH_BOTH*/);//Array (resultset as a whole) of arrays (rows)
        
     }
     catch(PDOException $e)
     {
         print("SQL String: ". $sql_store_image . "\n" . "Exception Message>>> " . $e->getMessage(). "<br>");        
     }
-    return $result[$colName];
+    //print(var_dump($result) . "<br>");
+    return $result[0][$colName];
 }
 
 /**
@@ -215,16 +222,16 @@ function upload($filesArray, $destinationFilename)
     
 //echo $uploadfile;
     //echo '<pre>';
-   print("<br> Dumping filesArray<br>");
-    var_dump($filesArray);
-    print("<br>Dumping the destinationFilename variable:<strong>");
-    print($destinationFilename);
-    print("</strong><br>");
+  // print("<br> Dumping filesArray<br>");
+  //  var_dump($filesArray);
+  //  print("<br>Dumping the destinationFilename variable:<strong>");
+ //   print($destinationFilename);
+//    print("</strong><br>");
     if (move_uploaded_file($filesArray['webcam']['tmp_name'], $destinationFilename)) {
-        echo "File is valid, and was successfully uploaded.\n";
+       // echo "File is valid, and was successfully uploaded.\n";
         $upload_status=TRUE;
     } else {
-        echo "Possible file upload attack!\n";
+       //echo "Possible file upload attack!\n";
         $upload_status=FALSE;
     }
     return $upload_status;
@@ -235,12 +242,11 @@ if (isset($_FILES) && $_GET['action'])
     $action = strtolower(trim($_GET['action']));
     $tableName="tbl_user_images";
     $tableName=GetTableNameForAction($action);
-    
-    
-
+   
     $destFileExtension = GetExtensionFromFilename($_FILES['webcam']['name']);
     $destFilename = GetNextTrainingImageName(htmlspecialchars($_GET['userId']) ,  $destFileExtension, $tableName);
-    print (">>>Generated File Name of Destination File is: <strong>". $destFilename . "</strong><br>");
+    //print (">>>Generated File Name of Destination File is: <strong>". $destFilename . "</strong><br>");
+    
     $uploaddir = "";
     if ($action === "training_path")
     {
@@ -256,8 +262,8 @@ if (isset($_FILES) && $_GET['action'])
     $uploadfile=  "";
     $lastCharacter = substr($uploaddir, strlen($uploaddir)-1, 1);
 	
-    print(">>> The imported upload directory is ". $uploaddir. "<br>");
-    print(">>> Last character in directory is ". $lastCharacter . "<br>");        
+   // print(">>> The imported upload directory is ". $uploaddir. "<br>");
+   // print(">>> Last character in directory is ". $lastCharacter . "<br>");        
     
     if ($lastCharacter === "/" || $lastCharacter === "\\")
     {
@@ -271,27 +277,24 @@ if (isset($_FILES) && $_GET['action'])
         if (!is_dir($uploaddir))
         {
             mkdir($uploaddir, 0777, TRUE);
-           print("<br>>>> Just Mkdir() A New Directory:<strong>".$uploaddir."</strong><br>");
+        //   print("<br>>>> Just Mkdir() A New Directory:<strong>".$uploaddir."</strong><br>");
         }
     }
     catch(Exception $ex)
     {
-        print(">>>Exceptin when creating destination folder. <strong>". $e->getMessage()."</strong><br>");
+       // print(">>>Exceptin when creating destination folder. <strong>". $e->getMessage()."</strong><br>");
     }
 	
      $uploadfile =$uploaddir . $destFilename;
 	
-    print(">>>Full file name: <strong>". $uploadfile. "</strong><br>");
+   //print(">>>Full file name: <strong>". $uploadfile. "</strong><br>");
 	
     $is_uploaded = FALSE;
     $is_uploaded = upload($_FILES, $uploadfile);
     if ($is_uploaded)
     {
-        //Save the info of the file into the database
-        print(">>><br>Before SaveFilename()-> userid is: <strong>". htmlspecialchars($_GET['userId'])."</strong><br>");
-       
         $is_file_saved_to_db = SaveFilename(htmlspecialchars($_GET['userId']), $uploadfile, $tableName);
-
+               
         if ($is_file_saved_to_db )
         {
            $json =  DoFinalAction($action, htmlspecialchars($_GET['userId']), $uploadfile);
@@ -313,6 +316,10 @@ if (isset($_FILES) && $_GET['action'])
                 print("AUTH@uploaded");
            }
         }
+    } else 
+    {
+        print("NOT_AUTH@FILE_NOT_UPLOADED");
+        return; //TODO: Remove
     }
 }
     

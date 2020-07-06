@@ -40,14 +40,18 @@ def show_user(user_id):
     #% str(result[0]) % str(result[1]) % str(result[2])
     return jsonVal
 
-#@app.route("/auth/user/<int:user_id>")
+
+#@app.route("/auth/user/<int:user_id>/<string:training_path>")
 #def authenticate(user_id, training_path):
-@app.route("/auth/user/<int:user_id>/<string:training_path>")
-def authenticate(user_id, training_path):
-    training_path = urllib.parse.unquote_plus(training_path)
+#   training_path = urllib.parse.unquote_plus(training_path)
+@app.route("/auth/user/<int:user_id>")
+def authenticate(user_id):
+    training_path = ""
     prediction_status=0
     label_user_id=""
     cardName=""    
+    user_auth_file_name=""
+    error_message=""
     try:
         #there is no label 0 in our training data so subject name for index/label 0 is empty   
         subjects, dicts = get_subjects_array_and_dict() 
@@ -60,7 +64,6 @@ def authenticate(user_id, training_path):
         face_recognizer.train(faces, np.array(labels))
         user_auth_file_name = "test-data/test1.jpg"        
         user_auth_file_name = getUserAuthFile(user_id)
-        
 
         if user_auth_file_name != "":
             test_img1 = cv2.imread(user_auth_file_name)
@@ -72,10 +75,11 @@ def authenticate(user_id, training_path):
             label_user_id=""
             cardName=""
 
-    except:
+    except Exception as err:
         prediction_status=0
+        error_message = str(err)
     
-    return "{\n'predictionStatus':'"+str(prediction_status) + "',\n'reqUserId':'" + str(user_id) + "',\n'predUserId':'" + str(label_user_id) + "',\n'predCardName':'" + str(cardName) + "',\n'inputImageFilename':'" + str(training_path) + "'\n}"
+    return "{\n'predictionStatus':'"+str(prediction_status) + "',\n'reqUserId':'" + str(user_id) + "',\n'predUserId':'" + str(label_user_id) + "',\n'predCardName':'" + str(cardName) + "',\n'inputImageFilename':'" + str(user_auth_file_name) + "',\n'ErrorMessage':'" + str(error_message)+ "'\n}"
 
 def getUserAuthFile(user_id):
     sql="select id, userId, imageName from tbl_user_image_auth_reqs where userId=%s LIMIT 1"

@@ -89,6 +89,7 @@ $showCameraButtons = FALSE;
  <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
 
     <div class="form-group">
+            <h3>Shopping Cart. Checking out....</h3>
             Welcome, <strong><?php echo $cardName; ?>.<br></strong>
             Card Number: <strong><?php echo $cardNumber; ?></strong><br>
             <strong>important</strong> To Pay, please take a picture of your face to authenticate instead of your card.
@@ -190,7 +191,7 @@ function saveSnap(){
  var base64image = document.getElementById("imageprev").src;
 
  Webcam.upload( base64image, 
-                "savepics.php?action=test_path&userId=<?php echo htmlspecialchars($_SESSION["USER_ID"]); ?>", 
+                "../savepics.php?action=test_path&userId=<?php echo htmlspecialchars($_SESSION["USER_ID"]); ?>", 
                 function(code, text) {
                     console.log('Save successfully');                
                 }
