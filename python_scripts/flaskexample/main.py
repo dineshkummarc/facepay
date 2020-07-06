@@ -26,7 +26,8 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return "Hello World Wide Web!"
+    return """<h1>Face Recognition using Local Binary Patterns (LBP) and OpenCV</h1><br> 
+    <ul><li><a href='auth/user/1/dd'>Face recognition endpoint</a></li><br><li><a href='user/1'>User detail retrieval endpoint</a></li></ul>"""
 
 @app.route('/user/<int:user_id>')
 def show_user(user_id):

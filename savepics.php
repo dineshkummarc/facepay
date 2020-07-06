@@ -5,18 +5,33 @@ require "settings/fileupload.php";
 /**
  * Do a final action depending on the value of the "action" query string param
 */
-function DoFinalAction($action)
+function DoFinalAction($action, $userId, $filename)
 {
+    $jsonResponse ="";
     if ($action=="training_path")
     {}
-    else if ($action =="test_path")
+    
+    if ($action =="test_path")
     {
         //TODO: Call a rest API here to the auth page
         $method="GET";
         $url="";//TODO: Read the url from a settings file?
-        $url="http://127.0.0.1:5000/auth/user/1/ddd";
-        CallAPI($method, $url, $data = false)
+        $url_format="http://127.0.0.1:5000/auth/user/%userId%/%imagefile%";
+        $url_format= GetSettingsKeyValue("face_recognition_url_format", "valCol");
+        $url_format=str_replace("%userId%", $userId, $url_format);
+        $url_format=str_replace("%imagefile%", urlencode($filename), $url_format);
+        $url = $url_format;
+        try {
+            $jsonResponse = CallAPI($method, $url, $data = false);
+            return $jsonResponse;
+        }catch(Exception $e)
+        {
+
+        }
+        
+
     }
+    return $jsonResponse;
 }
 
 // Method: POST, PUT, GET etc
@@ -80,7 +95,7 @@ function GetTableNameForAction($action)
  * Returns ALL rows from the tbl_settings table.
  * @param $keyVal The value of the keyCol column to use in filtering results from the table. 
  */
-function GetSettingsKeyValuePair($keyVal)
+function GetSettingsKeyValue($keyVal,$colName)
 {
     require "settings/database.php";
     $sql_select_settings="select * from tbl_settings where keyCol=?";
@@ -92,13 +107,13 @@ function GetSettingsKeyValuePair($keyVal)
         $stmt->bindParam("1", $keyVal);
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return $result;
+       
     }
     catch(PDOException $e)
     {
         print("SQL String: ". $sql_store_image . "\n" . "Exception Message>>> " . $e->getMessage(). "<br>");        
     }
-    return $status;
+    return $result[$colName];
 }
 
 /**
@@ -114,7 +129,7 @@ function SaveFilename($userId, $uploadfile, $tableName)
 {
     $status=FALSE;
     require "settings/database.php";
-    $sql_store_image="insert into :tableName (userId, imageName) values(:userid, :imageName)";
+    $sql_store_image="insert into ". htmlspecialchars($tableName) ." (userId, imageName) values(:userid, :imageName)";
    try
     {
         $conn= new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
@@ -122,7 +137,6 @@ function SaveFilename($userId, $uploadfile, $tableName)
          $stmt = $conn->prepare($sql_store_image);
          $stmt->bindParam(":userid", $userId);
          $stmt->bindParam(":imageName", $uploadfile);
-         $stmt->bindParam(":tableName", $tableName);
          $stmt->execute();
          $status=TRUE;
     }
@@ -143,14 +157,13 @@ function GetNextTrainingImageName($userid, $fileExtension, $tableName)
     $index="1";
      //Count the last index in the table for this user on the table tbl_user_images
     //  $sql_count_user_images="select count(id)+1 as nextId from tbl_user_images where userId=:userId";
-     $sql_count_user_images="select count(id)+1 as nextId from :tableName where userId=:userId";
+     $sql_count_user_images="select count(id)+1 as nextId from ". htmlspecialchars($tableName) ." where userId=:userId";
      try
      {
          $conn = new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
          $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
          $stmt = $conn->prepare($sql_count_user_images);
          $stmt->bindParam(":userId", $userid);
-         $stmt->bindParam(":tableName", $tableName);
          $stmt->execute();
          $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -222,7 +235,7 @@ if (isset($_FILES) && $_GET['action'])
     $action = strtolower(trim($_GET['action']));
     $tableName="tbl_user_images";
     $tableName=GetTableNameForAction($action);
-    $settingsAssocArr = GetSettingsKeyValuePair($action);
+    
     
 
     $destFileExtension = GetExtensionFromFilename($_FILES['webcam']['name']);
@@ -281,7 +294,24 @@ if (isset($_FILES) && $_GET['action'])
 
         if ($is_file_saved_to_db )
         {
-            DoFinalAction($action);
+           $json =  DoFinalAction($action, htmlspecialchars($_GET['userId']), $uploadfile);
+           //Treat the response of the json
+           if ($json != "")
+           {
+               $jsonObject = json_decode($json);
+               if (int($jsonObject->predictionStatus) === 1) //Success
+               {
+                    //print($jsonObject->predictionStatus);
+                    print("AUTH@". $json);
+               }
+               else
+               {
+                    print("NOT_AUTH@". $json);
+               }
+               
+           } else {//if the json is empty, this means that the action was not train_path
+                print("AUTH@uploaded");
+           }
         }
     }
 }

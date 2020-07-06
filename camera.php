@@ -201,7 +201,7 @@ function saveSnap(){
  Webcam.upload( base64image, 
                 "savepics.php?action=training_path&userId=<?php echo htmlspecialchars($_GET['userId']); ?>", 
                 function(code, text) {
-                    console.log('Save successfully');                
+                    console.log('Code is: ' + code + '\ntext is: ' + text);                
                 }
                 );
 

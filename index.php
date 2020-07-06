@@ -118,7 +118,7 @@ echo $errorAlert;
 	 	echo "&nbsp;&nbsp;" . $errorMsg; 
 	 
 	 ?> 
-	
+	<p>Click <a href='register.php'>here to register</a>.</p>
 	<!-- A button for taking snaps -->
 	 <form method="post" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
 	 <?php
