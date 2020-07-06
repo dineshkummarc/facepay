@@ -2,11 +2,104 @@
 require "settings/database.php";
 require "settings/fileupload.php";
 
+/**
+ * Do a final action depending on the value of the "action" query string param
+*/
+function DoFinalAction($action)
+{
+    if ($action=="training_path")
+    {}
+    else if ($action =="test_path")
+    {
+        //TODO: Call a rest API here to the auth page
+        $method="GET";
+        $url="";//TODO: Read the url from a settings file?
+        $url="http://127.0.0.1:5000/auth/user/1/ddd";
+        CallAPI($method, $url, $data = false)
+    }
+}
+
+// Method: POST, PUT, GET etc
+// Data: array("param" => "value") ==> index.php?param=value
+
+function CallAPI($method, $url, $data = false)
+{
+    $curl = curl_init();
+
+    switch ($method)
+    {
+        case "POST":
+            curl_setopt($curl, CURLOPT_POST, 1);
+
+            if ($data)
+                curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+            break;
+        case "PUT":
+            curl_setopt($curl, CURLOPT_PUT, 1);
+            break;
+        default:
+            if ($data)
+                $url = sprintf("%s?%s", $url, http_build_query($data));
+    }
+
+    // Optional Authentication:
+    curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    curl_setopt($curl, CURLOPT_USERPWD, "username:password");
+
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+
+    $result = curl_exec($curl);
+
+    curl_close($curl);
+
+    return $result;
+}
 
 //$sql_all_data="insert into tbl_notes(notes) values(:notes)";
+function GetTableNameForAction($action)
+{
+    $tableName="tbl_user_images";
 
+    switch($action)
+    {
+        case "training_path":
+            $tableName="tbl_user_images";
+        break;
+        case "test_path":
+            $tableName="tbl_user_image_auth_reqs";
+        break;
+        default:
+        $tableName="tbl_user_images";
+    break;
+    }
 
-
+    return $tableName;
+}
+/**
+ * Returns ALL rows from the tbl_settings table.
+ * @param $keyVal The value of the keyCol column to use in filtering results from the table. 
+ */
+function GetSettingsKeyValuePair($keyVal)
+{
+    require "settings/database.php";
+    $sql_select_settings="select * from tbl_settings where keyCol=?";
+   try
+    {
+        $conn= new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $stmt=$conn->prepare($sql_select_settings);
+        $stmt->bindParam("1", $keyVal);
+        $stmt->execute();
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
+    }
+    catch(PDOException $e)
+    {
+        print("SQL String: ". $sql_store_image . "\n" . "Exception Message>>> " . $e->getMessage(). "<br>");        
+    }
+    return $status;
+}
 
 /**
  * Add a parameter for table name.
@@ -44,18 +137,20 @@ function SaveFilename($userId, $uploadfile, $tableName)
 /**
  * Returns the filename that should be created next for a user [id]
 */
-function GetNextTrainingImageName($userid, $fileExtension)
+function GetNextTrainingImageName($userid, $fileExtension, $tableName)
 {
     require "settings/database.php";
     $index="1";
      //Count the last index in the table for this user on the table tbl_user_images
-     $sql_count_user_images="select count(id)+1 as nextId from tbl_user_images where userId=:userId";
+    //  $sql_count_user_images="select count(id)+1 as nextId from tbl_user_images where userId=:userId";
+     $sql_count_user_images="select count(id)+1 as nextId from :tableName where userId=:userId";
      try
      {
          $conn = new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
          $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
          $stmt = $conn->prepare($sql_count_user_images);
          $stmt->bindParam(":userId", $userid);
+         $stmt->bindParam(":tableName", $tableName);
          $stmt->execute();
          $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -122,28 +217,41 @@ function upload($filesArray, $destinationFilename)
     return $upload_status;
 }
 
-if (isset($_FILES))
+if (isset($_FILES) && $_GET['action'])
 {
+    $action = strtolower(trim($_GET['action']));
+    $tableName="tbl_user_images";
+    $tableName=GetTableNameForAction($action);
+    $settingsAssocArr = GetSettingsKeyValuePair($action);
+    
+
     $destFileExtension = GetExtensionFromFilename($_FILES['webcam']['name']);
-    $destFilename = GetNextTrainingImageName(htmlspecialchars($_GET['userId']) ,  $destFileExtension);
+    $destFilename = GetNextTrainingImageName(htmlspecialchars($_GET['userId']) ,  $destFileExtension, $tableName);
     print (">>>Generated File Name of Destination File is: <strong>". $destFilename . "</strong><br>");
     $uploaddir = "";
-    $UPLOAD_DIR = trim($UPLOAD_DIR); //trim whatever was in the "included fileupload.php" file.
+    if ($action === "training_path")
+    {
+        $uploaddir = trim($UPLOAD_DIR); //trim whatever was in the "included fileupload.php" file.
+    } else if ($action === "test_path")
+    {
+        $uploaddir = trim($TESTDATA_DIR); //trim whatever was in the "included fileupload.php" file.
+    }
+    
     $SUBJECT_FOLDER_NAME_PREFIX = trim($SUBJECT_FOLDER_NAME_PREFIX); //trim whatever comes from the setting files in case of errors.
     
     //Let's the get full upload filepathand name
     $uploadfile=  "";
-    $lastCharacter = substr($UPLOAD_DIR, strlen($UPLOAD_DIR)-1, 1);
+    $lastCharacter = substr($uploaddir, strlen($uploaddir)-1, 1);
 	
-    print(">>> The imported upload directory is ". $UPLOAD_DIR. "<br>");
+    print(">>> The imported upload directory is ". $uploaddir. "<br>");
     print(">>> Last character in directory is ". $lastCharacter . "<br>");        
     
     if ($lastCharacter === "/" || $lastCharacter === "\\")
     {
-        $uploaddir = trim($UPLOAD_DIR . $SUBJECT_FOLDER_NAME_PREFIX . htmlspecialchars($_GET['userId']) . "/");
+        $uploaddir = trim($uploaddir . $SUBJECT_FOLDER_NAME_PREFIX . htmlspecialchars($_GET['userId']) . "/");
     }  else 
     {
-        $uploaddir = trim($UPLOAD_DIR . "/" . $SUBJECT_FOLDER_NAME_PREFIX . htmlspecialchars($_GET['userId']) . "/");
+        $uploaddir = trim($uploaddir . "/" . $SUBJECT_FOLDER_NAME_PREFIX . htmlspecialchars($_GET['userId']) . "/");
     }
     try
     {      
@@ -164,13 +272,17 @@ if (isset($_FILES))
 	
     $is_uploaded = FALSE;
     $is_uploaded = upload($_FILES, $uploadfile);
-	 $is_uploaded = upload($_FILES, $_GET["userId"], $uploaddir);
     if ($is_uploaded)
     {
         //Save the info of the file into the database
         print(">>><br>Before SaveFilename()-> userid is: <strong>". htmlspecialchars($_GET['userId'])."</strong><br>");
-        $tableName="tbl_user_images";
-        SaveFilename(htmlspecialchars($_GET['userId']), $uploadfile, $tableName);
+       
+        $is_file_saved_to_db = SaveFilename(htmlspecialchars($_GET['userId']), $uploadfile, $tableName);
+
+        if ($is_file_saved_to_db )
+        {
+            DoFinalAction($action);
+        }
     }
 }
     

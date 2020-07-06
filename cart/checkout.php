@@ -9,52 +9,7 @@ $sql_count_images  = "SELECT count(*) as numImages from tbl_user_images where us
 $is_form_submitted = 0;
 $cardName          = "";
 $cardNumber        = ""; 
-$showCameraButtons = TRUE;
-
-    // if (isset($_POST["btnCheckout"])) //if the submit came from the "shop.php" submit button
-    // {
-
-    //     $passwordErr = "";
-
-
-
-   
-    //     //Get the userId in a hidden form field
-    //     $userid=$_POST["hidden_user_id"];
-    //     $sql_delete_all_images="delete from tbl_user_images where userId=:userId";
-    //     $sql_select_files_for_user="select imageName from tbl_user_images where userId=:userId";
-
-    //     try{
-    //         $conn=new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
-
-    //         $stmt=$conn->prepare($sql_select_files_for_user);
-    //         $stmt->bindParam(":userId", $userid);
-    //         $stmt->execute();
-    //         $result = $stmt->fetch();
-    //         if (count($result) > 0)
-    //         {
-    //             $filenameArray = array();
-    //             foreach($result as $row)
-    //             {
-    //                 $filenameArray[] = $row["imageName"];
-    //             }
-    //             //Now use a function defined  in the include file "fileupload.php" called "deletePhysicalFiles"
-    //             //Then delete from the folder path
-    //             deletePhysicalFiles($filenameArray);
-
-    //             //Then delete from the database table
-    //             $stmt = $conn->prepare($sql_delete_all_images);
-    //             $stmt->bindParam(":userId", $userid);
-    //             $stmt->execute();
-    //         }
-           
-
-    //     }catch(PDOException $e)
-    //     {
-
-    //     }
-    // }
-
+$showCameraButtons = FALSE;
 
 	if(isset($_POST["hidden_user_id"]) )
 	{ 
@@ -123,6 +78,9 @@ $showCameraButtons = TRUE;
  height: 240px;
  border: 1px solid black;
 }
+#btnPayWithFace {
+    display: none;
+}
 </style>
 </head>
 <body>
@@ -146,10 +104,16 @@ $showCameraButtons = TRUE;
    if ($showCameraButtons) 
    {
     ?>
-        <input type="button" value="Start Camera" onClick="configure()" class="btn btn-primary" >
-        <input type="button" value="Pay With Your Face" onClick="authenticateFace()" class="btn btn-primary" >
-        <!-- <input type="button" value="Take Snapshot" onClick="take_snapshot()" class="btn btn-primary" > -->
-        <!-- <input type="button" value="Save Snapshot" onClick="saveSnap()" class="btn btn-primary" > -->
+        <table>
+            <tr>
+                <td>
+                    <input type="button" value="Start Camera" onClick="configure()" class="btn btn-primary" >
+                </td>
+                <td>   
+                    <input type="button" value="Pay With Your Face" id="btnPayWithFace" onClick="authenticateFace()" class="btn btn-primary" >
+                </td>
+            </tr>
+        </table>  
      <?php 
    }
    else if (!$showCameraButtons) //Hide camera buttons
@@ -177,6 +141,7 @@ $showCameraButtons = TRUE;
         jpeg_quality: 100
         });
         Webcam.attach( '#my_camera' );
+        showPayWithFace();
  }
  // A button for taking snaps
 
@@ -205,6 +170,19 @@ $showCameraButtons = TRUE;
  function authenticateFace() {
       take_snapshot();
       saveSnap();
+      hidePayWithFace();
+ }
+
+ function hidePayWithFace()
+ {
+    var x = document.getElementById("btnPayWithFace");
+    x.style.display = "none";
+ }
+
+ function showPayWithFace()
+ {
+    var x = document.getElementById("btnPayWithFace");
+    x.style.display = "block";
  }
 
 function saveSnap(){
@@ -217,9 +195,6 @@ function saveSnap(){
                     console.log('Save successfully');                
                 }
                 );
-
-
-                
 }
 </script>
 </body>
