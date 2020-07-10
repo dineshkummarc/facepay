@@ -12,23 +12,17 @@ function DoFinalAction($action, $userId, $filename)
     {}
     
     if ($action =="test_path")
-    {
-        //TODO: Call a rest API here to the auth page
+    {        
         $method="GET";
-        $url="";//TODO: Read the url from a settings file?
+        $url="";
         $url_format="http://127.0.0.1:5000/auth/user/%userId%/%imagefile%";
         $url_format= GetSettingsKeyValue("face_recognition_url_format", "valCol");
-       // print(">>>URL_format is: {$url_format} <br>");
         $url_format=str_replace("%userId%", $userId, $url_format);
-        //$url_format=str_replace("%imagefile%", urlencode($filename), $url_format);
-        $url_format=str_replace("%imagefile%", "", $url_format);
         $url = $url_format;
-       // print(">>>Face recognition url is {$url}<br>");
+       //print(">>>Face recognition url is {$url}<br>");
         
         try {
             $jsonResponse = CallAPI($method, $url, $data = false);
-            print($jsonResponse);
-            return;
             return $jsonResponse;
         }catch(Exception $e)
         {
@@ -301,24 +295,38 @@ if (isset($_FILES) && $_GET['action'])
            //Treat the response of the json
            if ($json != "")
            {
-               $jsonObject = json_decode($json);
-               if (int($jsonObject->predictionStatus) === 1) //Success
+               $jsonObject = json_decode($json, true);
+               //var_dump($jsonObject);
+               //Get the filename of the image that has the face bounded by a box.
+               if (trim(strtolower($jsonObject["status"])) == "true")
                {
-                    //print($jsonObject->predictionStatus);
-                    print("AUTH@". $json);
-               }
-               else
+                    print($jsonObject["filename"]);
+               } else
                {
-                    print("NOT_AUTH@". $json);
+                    print("../img/face_not_found.png");
                }
                
+              // print($json);
+               //var_dump($jsonObject);
+            //    print("<br>");
+              // print("NOT_AUTH@". $json);
+            //    if ($jsonObject->predictionStatus === "1") //Success
+            //    {
+            //         //print($jsonObject->predictionStatus);
+            //         print("AUTH@". $json);
+            //    }
+            //    else
+            //    {
+            //         print("NOT_AUTH@". $json);
+            //    }
+               
            } else {//if the json is empty, this means that the action was not train_path
-                print("AUTH@uploaded");
+               // print("AUTH@uploaded");
            }
         }
     } else 
     {
-        print("NOT_AUTH@FILE_NOT_UPLOADED");
+        //print("NOT_AUTH@FILE_NOT_UPLOADED");
         return; //TODO: Remove
     }
 }

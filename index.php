@@ -1,4 +1,5 @@
 <?php
+
 require "settings/database.php";
 require "settings/trainingsettings.php";
 require "settings/menu.php";
@@ -6,7 +7,55 @@ require "settings/menu.php";
 
 if (isset($_GET["action"]) && $_GET["action"] =="logout")
 {
+	//Todo. Delete all the  authentication images from the file system to keep the system from being full of images
+	//whicha re not actively being used.
+	//But of course in a production envirionment you would only delete images for the user logging out.
+	DeleteAllFiles(/*$_GET["USER_ID"]*/0, true);
+
+	//Then abort the session
 	session_abort();
+	
+}
+
+function DeleteAllFiles($userId, $ignoreUserId=true)
+{
+	//Read from table auth and loop through all filenames
+	//delete each file from the table as well as from the filesystem.
+	$sql = "select id, imageName from tbl_user_image_auth_reqs  ";
+	if (!$ignoreUserId)
+	{
+		$sql .= " WHERE userId=:userId";
+	}
+	try 
+	{
+		require "settings/database.php";
+		$conn = new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
+		// set the PDO error mode to exception
+		$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		$stmt=$conn->prepare($sql);
+		if (!$ignoreUserId)
+		{
+			$stmt->bindParam(":userId", $userId);
+		}
+		// use exec() because no results are returned
+		$stmt->execute();
+		$result = $stmt->fetchall();
+		if(count($result) > 0)
+		{
+			foreach ($result as $k)
+			{
+				unlink($k[1]);
+			}
+			//Delete all the records in the table
+			$conn->exec("delete from tbl_user_image_auth_reqs");
+
+
+		}				
+	}
+	catch(PDOException $e) 
+	{
+		echo $sql . "<br>" . $e->getMessage();
+	}
 }
 
 $usr = "";

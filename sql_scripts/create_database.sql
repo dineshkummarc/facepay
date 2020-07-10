@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 06, 2020 at 04:11 AM
+-- Generation Time: Jul 10, 2020 at 11:43 PM
 -- Server version: 10.1.40-MariaDB
 -- PHP Version: 7.1.29
 
@@ -41,7 +41,7 @@ CREATE TABLE `tbl_settings` (
 INSERT INTO `tbl_settings` (`id`, `keyCol`, `valCol`) VALUES
 (1, 'training_path', 'C:/xampp/htdocs/facepay/all_upload/training/'),
 (2, 'test_path', 'C:/xampp/htdocs/facepay/all_upload/testdata/'),
-(3, 'face_recognition_url_format', 'http://127.0.0.1:5000/auth/user/%userId%/%imagefile%');
+(3, 'face_recognition_url_format', 'http://127.0.0.1:5000/image/boundingbox/%userId%');
 
 -- --------------------------------------------------------
 

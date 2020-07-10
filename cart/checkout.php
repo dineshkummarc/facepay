@@ -125,7 +125,8 @@ $showCameraButtons = FALSE;
     <?php 
    }
     ?>
-    <div id="results" ></div>
+    <div id="results" ></div> &nbsp;
+    <!-- <div id="faceDetect" ></div> -->
   </form>
  <!-- Script -->
  <script type="text/javascript" src="../js/webcam.min.js"></script>
@@ -150,7 +151,7 @@ $showCameraButtons = FALSE;
  // preload shutter audio clip
  var shutter = new Audio();
  shutter.autoplay = false;
- shutter.src = navigator.userAgent.match(/Firefox/) ? '../shutter.ogg' : '../shutter.mp3';
+ shutter.src = navigator.userAgent.match(/Firefox/) ? '../shutter.mp3' : '../shutter.ogg';
 
  function take_snapshot() {
         // play sound effect
@@ -160,8 +161,8 @@ $showCameraButtons = FALSE;
         Webcam.snap( 
             function(data_uri) {
                 // display results in page
-                document.getElementById('results').innerHTML = 
-                '<img id="imageprev" src="'+data_uri+'"/>';
+                // 10-July-2020
+               document.getElementById('results').innerHTML = '<img id="imageprev" src="'+data_uri+'"/>';
             } 
         );
 
@@ -193,7 +194,9 @@ function saveSnap(){
  Webcam.upload( base64image, 
                 "../savepics.php?action=test_path&userId=<?php echo htmlspecialchars($_SESSION["USER_ID"]); ?>", 
                 function(code, text) {
-                    console.log('Save successfully');                
+                    console.log('Code is: ' + code + '\ntext is: ' + text);  
+                    document.getElementById("imageprev").src = text;//10-July-2020 Set the new filename 
+             
                 }
                 );
 }
