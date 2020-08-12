@@ -32,8 +32,8 @@ require "../settings/menu.php";
 			<table>
 				<tr>
 
-					<td><b>Item:</b><div class="form-group"><input type="text" name="name" class="form-control" ></div></td>
-					<td><b>Quantity:</b><div class="form-group"><input type="text" class="form-control"  name="data"></div></td>
+					<td><b>Item:</b><div class="form-group"><input type="text" name="name" class="form-control" maxlength="45" ></div></td>
+					<td><b>Quantity:</b><div class="form-group"><input type="text" class="form-control"  name="data" maxlength="5"></div></td>
 
 				</tr>
 
@@ -54,9 +54,10 @@ require "../settings/menu.php";
 			<table id=list></table>
 			<p>
 			<div class="form-group">
-				<input type="button" value="Empty Cart"   class="btn btn-primary"  onclick="ClearAll()" />
-				<input type="submit" name="btnCheckout" value="Checkout"   class="btn btn-primary"  />	
-				<input type="hidden" name="hidden_user_id" value="<?php echo $_SESSION["USER_ID"]; ?>" />	
+				 <input type="button" id="btnClear" value="Empty Cart" disabled="true"  class="btn btn-primary"  onclick="ClearAll()" />
+				<input type="button" id="btnSave" name="btnSave" value="Save Items" disabled="true"   class="btn btn-primary" onclick="SaveToDatabase()"  />
+				<input type="submit" id="btnCheckout" name="btnCheckout" value="Checkout" disabled="true"  class="btn btn-primary" onclick="SaveToDatabase()" />	
+				<input type="hidden" id="hidden_user_id" name="hidden_user_id" value="<?php echo $_SESSION["USER_ID"]; ?>" />	
 			</div>
 			</p>
 		</div>

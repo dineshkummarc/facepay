@@ -4,6 +4,7 @@ function SaveItem() {
 	var name = document.forms.ShoppingList.name.value;
 	var data = document.forms.ShoppingList.data.value;
 	localStorage.setItem(name, data);
+	
 	doShowAll();
 	
 }
@@ -36,6 +37,8 @@ function RemoveItem() {
 //restart the local storage
 function ClearAll() {
 	localStorage.clear();
+	document.getElementById("btnSave").disabled=true;
+	document.getElementById("btnCheckout").disabled=true;
 	doShowAll();
 }
 //--------------------------------------------------------------------------------------
@@ -81,3 +84,53 @@ function CheckBrowser() {
 /*
 You can extend this script by inserting data to database or adding payment processing API to shopping cart..
 */
+function SaveToDatabase() {
+	var userid = document.getElementById("hidden_user_id").value; 
+	console.log("The user id value is " + userid);
+	var productName = "";
+	var quantity="";
+	var i = 0;
+	if (localStorage == null) {
+		alert("There are no products to save!");
+		return;
+	}
+
+	if (localStorage.length == 0) {
+		alert("There are no products to save.");
+		return;
+	}
+	let rawStorage = JSON.stringify(localStorage);
+	console.log(rawStorage);
+	//for more advance feature, you can set cap on max items in the cart
+	
+		productName = localStorage.key(i).replace("&","");
+		quantity = localStorage.getItem(productName);
+		//Do Ajax Call to PHP script that saves all this data into a table one by one
+		let request = new XMLHttpRequest();
+		if (!request) {
+			alert('Oops. Something went wrong. Please try again or upgrade your browser.');
+			return false;
+		}
+		let url="insertOrder.php?data=" +  encodeURIComponent(rawStorage) + "&user_id="+encodeURIComponent(userid);
+		console.log(url);
+		request.open('GET', url,true);
+		request.send();
+		document.getElementById('btnClear').disabled=true;
+		document.getElementById('btnSave').disabled=true;
+		document.getElementById('btnCheckout').disabled=false;
+
+	// for (i = 0; i <= localStorage.length-1; i++) {
+	// 	productName = localStorage.key(i).replace("&","");
+	// 	quantity = localStorage.getItem(productName);
+	// 	//Do Ajax Call to PHP script that saves all this data into a table one by one
+	// 	let request = new XMLHttpRequest();
+	// 	if (!request) {
+	// 		alert('Oops. Something went wrong. Please try again or upgrade your browser.');
+	// 		return false;
+	// 	}
+	// 	let url="insertOrder.php?product=" +  encodeURIComponent(productName) + "&quantity="+encodeURIComponent(quantity)+"&user_id="+encodeURIComponent(userid);
+	// 	console.log(url);
+	// 	request.open('GET', url,true);
+	// 	request.send();
+	// }
+}

@@ -21,7 +21,7 @@ SET time_zone = "+00:00";
 --
 -- Database: `db_facepay`
 --
-
+create dateabase `db_facepay`;
 -- --------------------------------------------------------
 
 --
@@ -142,6 +142,15 @@ ALTER TABLE `tbl_user_images`
 ALTER TABLE `tbl_user_image_auth_reqs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
+
+CREATE TABLE `tbl_order` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `product` varchar(45) NOT NULL,
+  `quantity` smallint(5) NOT NULL,
+  `user_id` INT(11) ,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `db_facepay`.`tbl_user` (`id`) ON DELETE SET NULL ON UPDATE CASCADE  
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='Very simple order table'
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

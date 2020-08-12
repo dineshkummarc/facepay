@@ -193,6 +193,7 @@ echo $errorAlert;
 
 			?>
 			<A HREF="<?php echo 'cart/shop.php'; ?>">Go to shop</A><br>
+			<A HREF="all_users.php">View All Users</A><br>
 			<?php
 			if (!$hasEnoughPictures)
 			{	
@@ -202,6 +203,7 @@ echo $errorAlert;
 			}
 		}
 		?>
+		
   </form>	
 
 </body>
