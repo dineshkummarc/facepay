@@ -94,13 +94,15 @@ function GetTableNameForAction($action)
 /**
  * Returns ALL rows from the tbl_settings table.
  * @param $keyVal The value of the keyCol column to use in filtering results from the table. 
+ * @param $colName The name of the column on the table.
  */
 function GetSettingsKeyValue($keyVal,$colName)
 {
-    require "settings/database.php";
+   // require "settings/database.php";
     $sql_select_settings="select * from tbl_settings where keyCol=?";
    try
     {
+        global $servername, $dbUsername, $dbname, $dbPassword;
         $conn= new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $stmt=$conn->prepare($sql_select_settings);
@@ -111,10 +113,33 @@ function GetSettingsKeyValue($keyVal,$colName)
     }
     catch(PDOException $e)
     {
-        print("SQL String: ". $sql_store_image . "\n" . "Exception Message>>> " . $e->getMessage(). "<br>");        
+        print("SQL String: ". $sql_select_settings . "\n" . "Exception Message>>> " . $e->getMessage(). "<br>");        
     }
     //print(var_dump($result) . "<br>");
     return $result[0][$colName];
+}
+
+function CountNumberOfRequestsDone($userid)
+{
+    $sql = "select count(*) as numChecks from tbl_user_image_auth_reqs WHERE userId=?";
+   
+   try
+    {
+        global $servername, $dbUsername, $dbname, $dbPassword;
+        $conn= new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $stmt=$conn->prepare($sql);
+        $stmt->bindParam("1", $userid);
+        $stmt->execute();
+        $result = $stmt->fetchAll(/*PDO::FETCH_BOTH*/);//Array (resultset as a whole) of arrays (rows)
+       
+    }
+    catch(PDOException $e)
+    {
+        print("SQL String: ". $sql . "\n" . "Exception Message>>> " . $e->getMessage(). "<br>");        
+    }
+    //print(var_dump($result) . "<br>");
+    return $result[0]["numChecks"];
 }
 
 /**
@@ -129,10 +154,11 @@ function GetSettingsKeyValue($keyVal,$colName)
 function SaveFilename($userId, $uploadfile, $tableName)
 {
     $status=FALSE;
-    require "settings/database.php";
+   // require "settings/database.php";
     $sql_store_image="insert into ". htmlspecialchars($tableName) ." (userId, imageName) values(:userid, :imageName)";
    try
     {
+        global $servername, $dbname, $dbUsername, $dbPassword;
         $conn= new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
          $stmt = $conn->prepare($sql_store_image);
@@ -154,13 +180,14 @@ function SaveFilename($userId, $uploadfile, $tableName)
 */
 function GetNextTrainingImageName($userid, $fileExtension, $tableName)
 {
-    require "settings/database.php";
+    //require "settings/database.php";
     $index="1";
      //Count the last index in the table for this user on the table tbl_user_images
     //  $sql_count_user_images="select count(id)+1 as nextId from tbl_user_images where userId=:userId";
      $sql_count_user_images="select count(id)+1 as nextId from ". htmlspecialchars($tableName) ." where userId=:userId";
      try
      {
+         global $servername, $dbname, $dbUsername, $dbPassword;
          $conn = new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
          $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
          $stmt = $conn->prepare($sql_count_user_images);
@@ -300,25 +327,22 @@ if (isset($_FILES) && $_GET['action'])
                //Get the filename of the image that has the face bounded by a box.
                if (trim(strtolower($jsonObject["status"])) == "true")
                {
-                    print($jsonObject["filename"]);
+                    print($jsonObject["filename"] . "|" . "1"); //1 means that redirect to the success page.
                } else
                {
-                    print("../img/face_not_found.png");
+                   //Count the number of times that we have already done this check
+                   $numFaceRecogsDone = CountNumberOfRequestsDone(htmlspecialchars($_GET['userId']));
+                   //get the settings for number of recognitions from the db
+                   $settingsNumRecogs = GetSettingsKeyValue("num_recogs", "valCol");
+                   if ($numFaceRecogsDone <= $settingsNumRecogs) 
+                   {
+                       print("../img/face_not_found.png". "|" . "2"); //2 means do nothing
+                   } else {
+                        print("../img/face_not_found.png". "|" . "3"); //3 means that display Exceeeded trial count message and link to shop  again
+                   }
+                    
                }
-               
-              // print($json);
-               //var_dump($jsonObject);
-            //    print("<br>");
-              // print("NOT_AUTH@". $json);
-            //    if ($jsonObject->predictionStatus === "1") //Success
-            //    {
-            //         //print($jsonObject->predictionStatus);
-            //         print("AUTH@". $json);
-            //    }
-            //    else
-            //    {
-            //         print("NOT_AUTH@". $json);
-            //    }
+ 
                
            } else {//if the json is empty, this means that the action was not train_path
                // print("AUTH@uploaded");

@@ -58,18 +58,58 @@ TABLE_DEF;
 	return $html_table_rows_arr;
 }
 
-function getUserShoppingArray($user_id) {
-	$list = array();
-	$pdo = new PDO("mysql:host=localhost;dbname=db_facepay", 'root', '');
-	$statement = $pdo->prepare('select * from tbl_order where user_id=:userid');
-	$statement->bindParam(":userid", $user_id);
-	$statement->execute();
-	$resultset = $statement->fetchAll();
-	if (count($resultset) > 0) {
-		foreach ($resultset as $row) {
-			//
+function getUserShoppingArray($orders_rowset) {
+	$disable_actions=FALSE;
+	$html_table_rows_arr = array();    
+    if (count($orders_rowset) > 0) {
+		if (!$disable_actions) {
+			$html_table_rows_arr[] =<<<TABLE_DEF
+<div class='container'>
+	<table class='table table-hover'>
+		<thead>
+			<tr>
+				<th>Description</th>
+				<th>Quantity</th>
+				<th>Amount</th>
+			</tr>
+		</thead>
+		<tbody>
+TABLE_DEF;
+		} else {
+			$html_table_rows_arr[] = <<<TABLE_DEF
+<div class='container'>
+	<table class='table table-hover'>
+		<thead>
+			<tr>
+				<th>Description</th>
+				<th>Quantity</th>
+				<th>Amount</th>
+			</tr>
+		</thead>
+		<tbody>
+TABLE_DEF;
 		}
+        
+        foreach($orders_rowset as $row)
+        {
+			$name=$row['product'];
+			$qty= $row['quantity'];
+			$id=$row['id'];
+			$amount = $id * $qty;
+			if (!$disable_actions) {
+				$html_table_rows_arr[] = "<tr><td>$name</td><td>$qty</td><td>$amount</td></tr>";
+			} else {
+				$html_table_rows_arr[] = "<tr><td>$name</td><td>$qty</td><td>$amount</td></tr>";
+			}
+            
+        }
+		$html_table_rows_arr[] =<<<TABLE_DEF
+		</tbody>
+	</table>
+</div>
+TABLE_DEF;
 	}
+	return $html_table_rows_arr;
 	
 }
 ?>

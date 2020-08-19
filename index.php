@@ -28,7 +28,8 @@ function DeleteAllFiles($userId, $ignoreUserId=true)
 	}
 	try 
 	{
-		require "settings/database.php";
+	//	require "settings/database.php";
+	global $servername, $dbUsername, $dbname, $dbPassword;
 		$conn = new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
 		// set the PDO error mode to exception
 		$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

@@ -54,8 +54,8 @@ require "../settings/menu.php";
 			<table id=list></table>
 			<p>
 			<div class="form-group">
-				 <input type="button" id="btnClear" value="Empty Cart" disabled="true"  class="btn btn-primary"  onclick="ClearAll()" />
-				<input type="button" id="btnSave" name="btnSave" value="Save Items" disabled="true"   class="btn btn-primary" onclick="SaveToDatabase()"  />
+				 <input type="button" id="btnClear" value="Empty Cart" class="btn btn-primary"  onclick="ClearAll()" />
+				<!-- <input type="button" id="btnSave" name="btnSave" value="Save Items" class="btn btn-primary" onclick="SaveToDatabase()"  /> -->
 				<input type="submit" id="btnCheckout" name="btnCheckout" value="Checkout" disabled="true"  class="btn btn-primary" onclick="SaveToDatabase()" />	
 				<input type="hidden" id="hidden_user_id" name="hidden_user_id" value="<?php echo $_SESSION["USER_ID"]; ?>" />	
 			</div>

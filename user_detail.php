@@ -1,5 +1,7 @@
 <?php 
+session_start();
 require "settings/database.php";
+
 //get the user id
 $user_id=$_GET['id'];
 $sql_get_details="select * from tbl_user where id=$user_id";
@@ -26,6 +28,10 @@ if (count($row_array) > 0) {
 </head>
 <body>
 	<h1>All Users</h1>
+    <ul>
+<li><a href='shop.php'>Shop again</a>
+<li><a href='index.php?acton=logout'>Logout</a>
+</ul>
     <br>
     <?php 
         if (count($row_array) > 0) {

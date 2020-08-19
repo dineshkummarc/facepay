@@ -4,7 +4,13 @@ function SaveItem() {
 	var name = document.forms.ShoppingList.name.value;
 	var data = document.forms.ShoppingList.data.value;
 	localStorage.setItem(name, data);
-	
+	if (localStorage.length > 0)
+	{
+		//Display the checkout button
+		document.getElementById('btnCheckout').disabled=false;
+	} else {
+		document.getElementById('btnCheckout').disabled=true;
+	}
 	doShowAll();
 	
 }
@@ -22,6 +28,13 @@ function ModifyItem() {
 			  localStorage.setItem(name1,data1);
 			  document.forms.ShoppingList.data.value = localStorage.getItem(name1);
 			}
+			if (localStorage.length > 0)
+			{
+				//Display the checkout button
+				document.getElementById('btnCheckout').disabled=false;
+			} else {
+				document.getElementById('btnCheckout').disabled=true;
+			}
 		
 	
 	doShowAll();
@@ -31,14 +44,27 @@ function ModifyItem() {
 function RemoveItem() {
 	var name = document.forms.ShoppingList.name.value;
 	document.forms.ShoppingList.data.value = localStorage.removeItem(name);
+	if (localStorage.length > 0)
+	{
+		//Display the checkout button
+		document.getElementById('btnCheckout').disabled=false;
+	} else {
+		document.getElementById('btnCheckout').disabled=true;
+	}
 	doShowAll();
 }
 //-------------------------------------------------------------------------------------
 //restart the local storage
 function ClearAll() {
 	localStorage.clear();
-	document.getElementById("btnSave").disabled=true;
-	document.getElementById("btnCheckout").disabled=true;
+	if (localStorage.length > 0)
+	{
+		//Display the checkout button
+		document.getElementById('btnCheckout').disabled=false;
+	} else {
+		document.getElementById('btnCheckout').disabled=true;
+	}
+
 	doShowAll();
 }
 //--------------------------------------------------------------------------------------
@@ -112,25 +138,9 @@ function SaveToDatabase() {
 			return false;
 		}
 		let url="insertOrder.php?data=" +  encodeURIComponent(rawStorage) + "&user_id="+encodeURIComponent(userid);
+		
 		console.log(url);
 		request.open('GET', url,true);
 		request.send();
-		document.getElementById('btnClear').disabled=true;
-		document.getElementById('btnSave').disabled=true;
-		document.getElementById('btnCheckout').disabled=false;
-
-	// for (i = 0; i <= localStorage.length-1; i++) {
-	// 	productName = localStorage.key(i).replace("&","");
-	// 	quantity = localStorage.getItem(productName);
-	// 	//Do Ajax Call to PHP script that saves all this data into a table one by one
-	// 	let request = new XMLHttpRequest();
-	// 	if (!request) {
-	// 		alert('Oops. Something went wrong. Please try again or upgrade your browser.');
-	// 		return false;
-	// 	}
-	// 	let url="insertOrder.php?product=" +  encodeURIComponent(productName) + "&quantity="+encodeURIComponent(quantity)+"&user_id="+encodeURIComponent(userid);
-	// 	console.log(url);
-	// 	request.open('GET', url,true);
-	// 	request.send();
-	// }
+		localStorage.clear();
 }

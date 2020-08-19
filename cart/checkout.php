@@ -10,6 +10,7 @@ $is_form_submitted = 0;
 $cardName          = "";
 $cardNumber        = ""; 
 $showCameraButtons = FALSE;
+$delete_Recognitions = "DELETE from tbl_user_image_auth_reqs WHERE userId=:userId";//.htmlspecialchars($_SESSION['USER_ID']);
 
 	if(isset($_POST["hidden_user_id"]) )
 	{ 
@@ -19,6 +20,10 @@ $showCameraButtons = FALSE;
         {
             $conn = new PDO("mysql:host=$servername;dbname=$dbname", $dbUsername, $dbPassword);
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+ 
+            $stmt=$conn->prepare($delete_Recognitions);
+            $stmt->bindParam(":userId", $userid);
+            $stmt->execute();
 			$stmt=$conn->prepare($sql_get_user);
             $stmt->bindParam(":userId", $userid);
             $stmt->execute();
@@ -187,6 +192,25 @@ $showCameraButtons = FALSE;
     x.style.display = "block";
  }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+// function saveSnap(){
+//  // Get base64 value from <img id='imageprev'> source
+//  var base64image = document.getElementById("imageprev").src;
+
+//  Webcam.upload( base64image, 
+//                 "../savepics.php?action=test_path&userId=<?php echo htmlspecialchars($_SESSION["USER_ID"]); ?>", 
+//                 function(code, text) {
+//                     console.log('Code is: ' + code + '\ntext is: ' + text);  
+//                     document.getElementById("imageprev").src = text;//10-July-2020 Set the new filename 
+             
+//                 }
+//                 );
+// }
+
+
+
 function saveSnap(){
  // Get base64 value from <img id='imageprev'> source
  var base64image = document.getElementById("imageprev").src;
@@ -195,7 +219,37 @@ function saveSnap(){
                 "../savepics.php?action=test_path&userId=<?php echo htmlspecialchars($_SESSION["USER_ID"]); ?>", 
                 function(code, text) {
                     console.log('Code is: ' + code + '\ntext is: ' + text);  
-                    document.getElementById("imageprev").src = text;//10-July-2020 Set the new filename 
+                    //split the text by pipe character
+                    var splitArr = text.split('|');
+                    var imgUrl = splitArr[0];
+                    var successIndicator = splitArr[1];
+                    document.getElementById("imageprev").src = imgUrl;//10-July-2020 Set the new filename 
+                    if (successIndicator =="3") {
+                        document.getElementById('results').innerHTML="<h3><a href='shop.php'>Exceeded Number of Trials. Back to Shop</a></h3><br />"+document.getElementById('results').innerHTML; 
+                    } else if (successIndicator =="1") {
+                         window.location.href = "success.php";
+                    }
+                    
+                    //wait some time
+                    sleep(2000).then(() => { 
+                        switch(successIndicator)
+                        {
+                            case 1:
+                                //Then redirect to success page
+                                //window.location.href = "success.php?userId=<?php echo htmlspecialchars($_SESSION["USER_ID"]); ?>";
+                                window.location.href = "success.php";
+                                break;
+                            case 2:
+                                //try again. do nothing
+                                break;
+                            case 3: 
+                                window.location.href="cart/shop.php";
+                                break;
+                            default:
+                                break;
+                        } 
+                    });                                    
+                   
              
                 }
                 );
