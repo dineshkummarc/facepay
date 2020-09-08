@@ -4,7 +4,7 @@ $menuBar=<<<NAV
 NAV;
 
 $menuBarAdmin=<<<NAV
-<A HREF='index.php?action=logout'>Logout</A> | <a href='all_users.php'>All Users</a> | <a href='users_and_goods.php'>All Orders</a>
+<A HREF='index.php?action=home'>Home</A> | <A HREF='index.php?action=logout'>Logout</A> | <a href='all_users.php'>All Users</a> | <a href='users_and_goods.php'>All Orders</a>
 NAV;
 
 $menuBarAdminLanding=<<<NAV
