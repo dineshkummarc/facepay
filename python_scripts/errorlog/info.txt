@@ -15,3 +15,4 @@ detect_face( ) >> Number of faces is 0
 detect_face( ) >> Number of faces is 0
 detect_face( ) >> Number of faces is 0
 detect_face( ) >> Number of faces is 1
+detect_face( ) >> Number of faces is 1

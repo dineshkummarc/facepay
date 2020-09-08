@@ -1,10 +1,11 @@
 <?php
 //Connect to db and SELECT * FROM users
-require "settings/database.php";
+session_start();
+require "../settings/database.php";
 
 $sql="SELECT * FROM db_facepay.tbl_user";
 $con=new PDO("mysql:host=localhost;dbname=db_facepay", "root", "");
-$rowset=$con->query($sql);
+$rowset=$con->query($sql); 
 
 
 $html_table_rows_arr = getUserTable($rowset);
@@ -26,6 +27,10 @@ $html_table_rows_arr = getUserTable($rowset);
 	<title>FacePay..::.. Welcome</title>
 </head>
 <body>
+<ul>
+<li><a href='index.php?action=home'>Go Home</a>
+<li><a href='index.php?acton=logout'>Logout</a>
+</ul>
 	<h1>All Users</h1>
     <br>
     <?php 
